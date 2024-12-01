@@ -64,23 +64,26 @@ const server = net.createServer((socket) => {
         }
     });
 
-    // Handle client disconnection
     socket.on('end', () => {
-        delete players[socket.id];
         console.log('Client disconnected');
+        delete players[socket.id];
         broadcastMessage({action: "leave", id: socket.id});
         
-        // Remove the client from the list of connected clients
         const index = clients.indexOf(socket);
         if (index !== -1) {
             clients.splice(index, 1);
         }
     });
-
-    // Handle socket error
+    
     socket.on('error', (err) => {
         console.error("Socket error:", err);
+        const index = clients.indexOf(socket);
+        if (index !== -1) {
+            clients.splice(index, 1);
+        }
     });
+    
+    
 
 }).listen(PORT, HOST, () => {
     console.log(HOST+' Server running on port '+PORT);
@@ -95,7 +98,12 @@ function broadcastMessage(message) {
     clients.forEach(client => {
         if (client.writable) {
             if (message.action === "move" && client.id === message.id) return;
-            client.write(messageStr);
+            try {
+                client.write(messageStr);
+            } catch (err) {
+                console.error(`Error writing to client ${client.id}:`, err);
+            }
         }
     });
+    
 }
