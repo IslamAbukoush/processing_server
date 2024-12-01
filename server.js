@@ -15,7 +15,7 @@ for(let i = 0; i < 10; i++) {
 // Array to keep track of all connected clients
 const clients = [];
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 const server = net.createServer((socket) => {
@@ -76,11 +76,18 @@ const server = net.createServer((socket) => {
     });
     
     socket.on('error', (err) => {
-        console.error("Socket error:", err);
+        if (err.code === 'ECONNRESET') {
+            console.warn(`Client ${socket.id} disconnected abruptly.`);
+        } else {
+            console.error("Socket error:", err);
+        }
+        
+        // Ensure cleanup
         const index = clients.indexOf(socket);
         if (index !== -1) {
             clients.splice(index, 1);
         }
+        delete players[socket.id];
     });
     
     
